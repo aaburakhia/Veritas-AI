@@ -416,26 +416,38 @@ def main():
             <p style="text-align: center; color: #6B7280; margin-bottom: 1.5rem;">
                 Our AI detection system uses advanced machine learning to analyze text patterns and linguistic features.
             </p>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
-                    <strong>1. Text Analysis</strong><br>
-                    <small style="color: #6B7280;">We preprocess and analyze your text</small>
-                </div>
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤖</div>
-                    <strong>2. AI Processing</strong><br>
-                    <small style="color: #6B7280;">Our model evaluates linguistic patterns</small>
-                </div>
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
-                    <strong>3. Results</strong><br>
-                    <small style="color: #6B7280;">Get accurate predictions with confidence scores</small>
-                </div>
-            </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Use Streamlit columns instead of HTML grid for better compatibility
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+                <strong>1. Text Analysis</strong><br>
+                <small style="color: #6B7280;">We preprocess and analyze your text</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤖</div>
+                <strong>2. AI Processing</strong><br>
+                <small style="color: #6B7280;">Our model evaluates linguistic patterns</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                <strong>3. Results</strong><br>
+                <small style="color: #6B7280;">Get accurate predictions with confidence scores</small>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
     
