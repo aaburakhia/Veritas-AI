@@ -5,8 +5,8 @@ import pandas as pd
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Veritas AI: The Truth Detector",
-    page_icon="🤖",
+    page_title="Veritas AI | The Truth Detector",
+    page_icon="🔎",
     layout="wide"
 )
 
@@ -24,6 +24,7 @@ def load_models():
         return model, vectorizer, nlp
     except Exception as e:
         print(f"❌ Error loading files: {e}")
+        st.error(f"Error loading model files: {e}")
         return None, None, None
 
 model, vectorizer, nlp = load_models()
@@ -38,66 +39,66 @@ def preprocess_text(text):
     ]
     return " ".join(processed_tokens)
 
-# --- Main App Interface ---
-st.title("Veritas AI: The Truth Detector 🤖")
-st.write(f"An AI detector powered by a Random Forest model with **99.77% accuracy**. For best results, please enter text with at least **{MIN_CHARS}** characters.")
-
 # --- Sidebar ---
-st.sidebar.header("About This App")
+st.sidebar.header("About Veritas AI 🔎")
 st.sidebar.write("""
 This application uses a machine learning model to distinguish between human-written and AI-generated text.
-**Workflow:**
-1.  **Preprocessing:** The input text is cleaned using spaCy.
-2.  **Vectorization:** The cleaned text is converted into numerical features using TF-IDF.
-3.  **Prediction:** A pre-trained Random Forest model predicts the origin of the text.
+
+It is powered by a **Random Forest** model with **99.77% accuracy** on its test dataset.
 """)
-st.sidebar.warning(f"**Note:** This model was trained on long-form essays and is most accurate with texts longer than {MIN_CHARS} characters.")
+st.sidebar.info(f"**Note:** The model is most accurate with texts longer than {MIN_CHARS} characters, as it was trained on long-form essays.")
+st.sidebar.markdown("---")
+st.sidebar.write("Project by: [Your Name Here]") # <-- Change this to your name!
 
-# --- Input and Prediction ---
-if model is None or vectorizer is None:
-    st.error("Model files are not loaded. Please check the logs.")
-else:
-    # Initialize session state to hold the text
-    if 'input_text' not in st.session_state:
-        st.session_state.input_text = ""
+# --- Main App Interface ---
+st.title("Veritas AI: The Truth Detector")
+st.write("Paste the text you want to analyze below. The model will determine its likely origin.")
+st.markdown("---")
 
-    def update_text():
-        st.session_state.input_text = st.session_state.widget_text
+# --- Two-Column Layout ---
+col1, col2 = st.columns([2, 1.5])
 
-    input_text = st.text_area(
-        "Enter the text you want to analyze:", 
-        height=250, 
-        placeholder="Paste your text here...",
-        key="widget_text",
-        on_change=update_text
-    )
-
-    # --- Character Counter ---
-    char_count = len(st.session_state.input_text)
+# --- Column 1: Input ---
+with col1:
+    st.subheader("Your Text")
+    # THIS IS THE SIMPLIFIED AND CORRECTED INPUT WIDGET
+    input_text = st.text_area("Enter text here:", height=350, placeholder="Start typing or paste your text...")
+    char_count = len(input_text)
+    
+    # This counter will now update automatically on every interaction.
     if char_count < MIN_CHARS:
         st.warning(f"Characters: {char_count}/{MIN_CHARS}")
     else:
         st.success(f"Characters: {char_count}/{MIN_CHARS}")
 
-    # --- Analyze Button ---
-    # The button is disabled if the character count is too low
-    if st.button("Analyze Text", disabled=(char_count < MIN_CHARS)):
-        with st.spinner("Analyzing..."):
-            processed_text = preprocess_text(st.session_state.input_text)
-            vectorized_text = vectorizer.transform([processed_text])
-            prediction = model.predict(vectorized_text)[0]
-            probabilities = model.predict_proba(vectorized_text)[0]
+# --- Column 2: Output ---
+with col2:
+    st.subheader("Analysis Results")
+    
+    # The button now correctly checks the length of the 'input_text' variable.
+    if st.button("Analyze Text", disabled=(char_count < MIN_CHARS), use_container_width=True):
+        if model is not None and vectorizer is not None:
+            with st.spinner("Analyzing..."):
+                processed_text = preprocess_text(input_text)
+                vectorized_text = vectorizer.transform([processed_text])
+                prediction = model.predict(vectorized_text)[0]
+                probabilities = model.predict_proba(vectorized_text)[0]
 
-            col1, col2 = st.columns(2)
-            
-            if prediction == 1:
-                label = "AI-Generated"
-                confidence = probabilities[1]
-                col1.error(f"**Prediction: {label}**")
-            else:
-                label = "Human-Written"
-                confidence = probabilities[0]
-                col1.success(f"**Prediction: {label}**")
-            
-            col2.metric(label="Confidence", value=f"{confidence:.2%}")
-            st.progress(confidence)
+                if prediction == 1:
+                    label = "AI-Generated"
+                    confidence = probabilities[1]
+                    st.error(f"## **Prediction: {label} 🤖**")
+                else:
+                    label = "Human-Written"
+                    confidence = probabilities[0]
+                    st.success(f"## **Prediction: {label} 🧑‍💻**")
+                
+                st.metric(label="Confidence", value=f"{confidence:.2%}")
+                st.progress(confidence)
+                
+                with st.expander("View Processed Text"):
+                    st.code(processed_text, language=None)
+        else:
+            st.error("Model files are not loaded. Please check the logs.")
+    else:
+        st.info("Enter at least 250 characters and click 'Analyze Text' to see the results.")
