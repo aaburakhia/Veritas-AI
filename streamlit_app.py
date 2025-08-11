@@ -17,8 +17,8 @@ MIN_CHARS = 250 # Define the minimum character count for analysis
 @st.cache_resource
 def load_models():
     try:
-        model = joblib.load('best_random_forest_model.joblib')
-        vectorizer = joblib.load('tfidf_vectorizer.joblib')
+        model = joblib.load('model/best_random_forest_model.joblib')
+        vectorizer = joblib.load('model/tfidf_vectorizer.joblib')
         nlp = spacy.load("en_core_web_sm")
         print("✅ Models loaded successfully.")
         return model, vectorizer, nlp
