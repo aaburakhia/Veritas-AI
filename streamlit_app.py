@@ -10,13 +10,15 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Constants ---
+MIN_CHARS = 250 # Define the minimum character count for analysis
+
 # --- Caching the Models ---
-# This is a key Streamlit feature that prevents reloading the models on every interaction.
 @st.cache_resource
 def load_models():
     try:
-        model = joblib.load('model/best_random_forest_model.joblib')
-        vectorizer = joblib.load('model/tfidf_vectorizer.joblib')
+        model = joblib.load('best_random_forest_model.joblib')
+        vectorizer = joblib.load('tfidf_vectorizer.joblib')
         nlp = spacy.load("en_core_web_sm")
         print("✅ Models loaded successfully.")
         return model, vectorizer, nlp
@@ -38,50 +40,64 @@ def preprocess_text(text):
 
 # --- Main App Interface ---
 st.title("Veritas AI: The Truth Detector 🤖")
-st.write("An advanced AI detector powered by a Random Forest model with **99.77% accuracy**.")
+st.write(f"An AI detector powered by a Random Forest model with **99.77% accuracy**. For best results, please enter text with at least **{MIN_CHARS}** characters.")
 
-# --- Sidebar for Explanations ---
+# --- Sidebar ---
 st.sidebar.header("About This App")
 st.sidebar.write("""
 This application uses a machine learning model to distinguish between human-written and AI-generated text.
-
 **Workflow:**
-1.  **Preprocessing:** The input text is cleaned using spaCy (lemmatization, stop word removal).
+1.  **Preprocessing:** The input text is cleaned using spaCy.
 2.  **Vectorization:** The cleaned text is converted into numerical features using TF-IDF.
 3.  **Prediction:** A pre-trained Random Forest model predicts the origin of the text.
 """)
-st.sidebar.info("The model was trained on a diverse dataset of over 300,000 text samples.")
+st.sidebar.warning(f"**Note:** This model was trained on long-form essays and is most accurate with texts longer than {MIN_CHARS} characters.")
 
 # --- Input and Prediction ---
 if model is None or vectorizer is None:
     st.error("Model files are not loaded. Please check the logs.")
 else:
-    input_text = st.text_area("Enter the text you want to analyze:", height=250, placeholder="Paste your text here...")
+    # Initialize session state to hold the text
+    if 'input_text' not in st.session_state:
+        st.session_state.input_text = ""
 
-    if st.button("Analyze Text"):
-        if input_text:
-            with st.spinner("Analyzing..."):
-                # Preprocess, vectorize, and predict
-                processed_text = preprocess_text(input_text)
-                vectorized_text = vectorizer.transform([processed_text])
-                prediction = model.predict(vectorized_text)[0]
-                probabilities = model.predict_proba(vectorized_text)[0]
+    def update_text():
+        st.session_state.input_text = st.session_state.widget_text
 
-                # Display results in columns for a cleaner look
-                col1, col2 = st.columns(2)
-                
-                if prediction == 1:
-                    label = "AI-Generated"
-                    confidence = probabilities[1]
-                    col1.error(f"**Prediction: {label}**")
-                else:
-                    label = "Human-Written"
-                    confidence = probabilities[0]
-                    col1.success(f"**Prediction: {label}**")
-                
-                col2.metric(label="Confidence", value=f"{confidence:.2%}")
-                
-                # Confidence meter
-                st.progress(confidence)
-        else:
-            st.warning("Please enter some text to analyze.")
+    input_text = st.text_area(
+        "Enter the text you want to analyze:", 
+        height=250, 
+        placeholder="Paste your text here...",
+        key="widget_text",
+        on_change=update_text
+    )
+
+    # --- Character Counter ---
+    char_count = len(st.session_state.input_text)
+    if char_count < MIN_CHARS:
+        st.warning(f"Characters: {char_count}/{MIN_CHARS}")
+    else:
+        st.success(f"Characters: {char_count}/{MIN_CHARS}")
+
+    # --- Analyze Button ---
+    # The button is disabled if the character count is too low
+    if st.button("Analyze Text", disabled=(char_count < MIN_CHARS)):
+        with st.spinner("Analyzing..."):
+            processed_text = preprocess_text(st.session_state.input_text)
+            vectorized_text = vectorizer.transform([processed_text])
+            prediction = model.predict(vectorized_text)[0]
+            probabilities = model.predict_proba(vectorized_text)[0]
+
+            col1, col2 = st.columns(2)
+            
+            if prediction == 1:
+                label = "AI-Generated"
+                confidence = probabilities[1]
+                col1.error(f"**Prediction: {label}**")
+            else:
+                label = "Human-Written"
+                confidence = probabilities[0]
+                col1.success(f"**Prediction: {label}**")
+            
+            col2.metric(label="Confidence", value=f"{confidence:.2%}")
+            st.progress(confidence)
